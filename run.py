@@ -1,81 +1,184 @@
-
 from bauhaus import Encoding, proposition, constraint
 from bauhaus.utils import count_solutions, likelihood
+from node import Node, map
+from termcolor import colored
+from allMoves import PossiblePaths
+
 
 # Encoding that will store all of your constraints
 E = Encoding()
 
-# To create propositions, create classes for them first, annotated with "@proposition" and the Encoding
-@proposition(E)
-class BasicPropositions:
+# To create Propositionss, create classes for them first, annotated with "@Propositions" and the Encoding
 
+#TODO create our own Propositions types
+@constraint.at_most_one(E)
+@proposition(E)
+class LocationPropositions:
     def __init__(self, data):
         self.data = data
+    
+    def __repr__(self):
+        return f"A.{self.data}"
 
+a = LocationPropositions("a")
+b = LocationPropositions("b")
+l = LocationPropositions("l")
+r = LocationPropositions("r")
+
+@proposition(E)
+class DirectionPropositions:
+    def __init__(self, data):
+        self.data = data
+    
     def __repr__(self):
         return f"A.{self.data}"
 
 
-# Different classes for propositions are useful because this allows for more dynamic constraint creation
-# for propositions within that class. For example, you can enforce that "at least one" of the propositions
-# that are instances of this class must be true by using a @constraint decorator.
-# other options include: at most one, exactly one, at most k, and implies all.
-# For a complete module reference, see https://bauhaus.readthedocs.io/en/latest/bauhaus.html
-@constraint.at_least_one(E)
-@proposition(E)
-class FancyPropositions:
+s_n = DirectionPropositions("s_n")
+s_w = DirectionPropositions("s_w")
+s_e = DirectionPropositions("s_e")
+s_s = DirectionPropositions("s_s")
 
-    def __init__(self, data):
-        self.data = data
+t_n = DirectionPropositions("t_n")
+t_w = DirectionPropositions("t_w")
+t_e = DirectionPropositions("t_e")
+t_s = DirectionPropositions("t_s")
 
-    def __repr__(self):
-        return f"A.{self.data}"
+# E idk why this is here
 
-# Call your variables whatever you want
-a = BasicPropositions("a")
-b = BasicPropositions("b")   
-c = BasicPropositions("c")
-d = BasicPropositions("d")
-e = BasicPropositions("e")
-# At least one of these will be true
-x = FancyPropositions("x")
-y = FancyPropositions("y")
-z = FancyPropositions("z")
+i_n = DirectionPropositions("i_n") #Intersection North
+i_e = DirectionPropositions("i_e") #Intersection East
+i_s = DirectionPropositions("i_s") #Intersection South
+i_w = DirectionPropositions("i_w") #Intersection West
+# fail = DirectionPropositions("fail") # used to auto fail 
 
 
-# Build an example full theory for your setting and return it.
-#
-#  There should be at least 10 variables, and a sufficiently large formula to describe it (>50 operators).
-#  This restriction is fairly minimal, and if there is any concern, reach out to the teaching staff to clarify
-#  what the expectations are.
-def example_theory():
-    # Add custom constraints by creating formulas with the variables you created. 
-    E.add_constraint((a | b) & ~x)
-    # Implication
-    E.add_constraint(y >> z)
-    # Negate a formula
-    E.add_constraint((x & y).negate())
-    # You can also add more customized "fancy" constraints. Use case: you don't want to enforce "exactly one"
-    # for every instance of BasicPropositions, but you want to enforce it for a, b, and c.:
-    constraint.add_exactly_one(E, a, b, c)
+
+def main(start, target):
+    E.clear_constraints()
+    # make sure are adjacent or else everything goes wonky
+    print("Target object: ", str(target))
+    print("\nStart object", str(start))
+    # relative location
+    start_x = int(start.name[0])
+    start_y = int(start.name[1])
+
+    target_x = int(target.name[0])
+    target_y = int(target.name[1])
+
+    #If is block:
+    if not (target.TN or target.TS or target.TW or target.TE):
+        E.add_constraint(~(t_n | t_s | t_w | t_e))
+        
+    # add these constraints
+    E.add_constraint(a >> (s_n & t_s))
+    E.add_constraint(b >> (s_s & t_n))
+
+    E.add_constraint(r >>(s_w & t_e))
+    E.add_constraint(l >>(s_e & t_w))
+
+
+    # is above
+    if start_x - target_x == 1:
+        print("Added constraint: a")
+        E.add_constraint(a)
+    # is below
+    elif target_x - start_x   == 1:
+        print("Added constraint: b")
+        E.add_constraint(b)
+
+    # we are going to the left (west)
+    elif target_y - start_y  == 1:
+        print("Added constraint: l")
+        E.add_constraint(l)
+
+    elif start_y - target_y == 1:
+        print("Added constraint: r")
+        E.add_constraint(r)
+
+    else:
+        # if no if statements fire, bugger the whole model
+        print("state")
+        # fore to be unsolveable 
+        # E.add_constraint(fail & ~fail)
+    # directional truthiness
+    
+    # E.add_constraint(~(t_e | t_n | t_s | t_w))
+    E.add_constraint(s_n) if start.TN else E.add_constraint(~s_n)
+    #TODO change to implications to beef up code 
+    E.add_constraint(s_s) if start.TS else E.add_constraint(~(s_s))
+
+    E.add_constraint(s_e) if start.TE else E.add_constraint(~(s_e))
+
+    E.add_constraint(s_w) if start.TW else E.add_constraint(~(s_w))                
+    
+    E.add_constraint(t_n) if target.TN else E.add_constraint(~(t_n))
+  
+    E.add_constraint(t_s) if target.TS else E.add_constraint(~(t_s))
+  
+    E.add_constraint(t_e) if target.TE else E.add_constraint(~(t_e)) 
+
+    E.add_constraint(t_w) if target.TW else E.add_constraint(~(t_w))
 
     return E
 
 
+def move2(start, target):
+
+    start_x = int(start.name[0])
+    start_y = int(start.name[1])
+
+    target_x = int(target.name[0])
+    target_y = int(target.name[1])
+
+    if start_x > target_x:
+        print("Added constraint: a")
+        E.add_constraint(a)
+
+    elif start_x < target_x:
+        print("Added constraint: b")
+        E.add_constraint(b)
+
+    # we are going to the left (west)
+    elif start_y > target_y:
+        print("Added constraint: l")
+        E.add_constraint(l)
+
+    elif start_y < target_y:
+        print("Added constraint: r")
+        E.add_constraint(r)
+
+
 if __name__ == "__main__":
-
-    T = example_theory()
     # Don't compile until you're finished adding all your constraints!
-    T = T.compile()
     # After compilation (and only after), you can check some of the properties
-    # of your model:
-    print("\nSatisfiable: %s" % T.satisfiable())
-    print("# Solutions: %d" % count_solutions(T))
-    print("   Solution: %s" % T.solve())
+    valid = []
 
-    print("\nVariable likelihoods:")
-    for v,vn in zip([a,b,c,x,y,z], 'abcxyz'):
-        # Ensure that you only send these functions NNF formulas
-        # Literals are compiled to NNF here
-        print(" %s: %.2f" % (vn, likelihood(T, v)))
-    print()
+    sample_path=[map[2][0],map[2][1], map[2][2]]
+    violated = False
+    for m in range(len(sample_path) - 1):
+        
+        T = main(sample_path[m],sample_path[m+1])
+        #print(str(sample_path[m]),str(sample_path[m+1]))
+        T = T.compile()
+        if not T.satisfiable():
+            print(f"M not satisfiable: {str(m)}")
+            print("Start:", sample_path[m].name, "Target:", sample_path[m+1].name)
+            print(str(sample_path[m]))
+            print(str(sample_path[m+1]))
+            violated=True
+            # constraints = T.debug_constraints()
+            # print(constraints)
+            break    
+        T = T.clear_constraints()
+
+    if not violated:
+        valid.append(sample_path)
+print(valid)
+        
+
+    
+
+
+        
+

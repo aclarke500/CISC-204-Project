@@ -1,14 +1,13 @@
 
 import os, sys
 
-from run import example_theory
+from run import main
 
 USAGE = '\n\tpython3 test.py [draft|final]\n'
 EXPECTED_VAR_MIN = 10
 EXPECTED_CONS_MIN = 50
-
 def test_theory():
-    T = example_theory()
+    T = main()
 
     assert len(T.vars()) > EXPECTED_VAR_MIN, "Only %d variables -- your theory is likely not sophisticated enough for the course project." % len(T.vars())
     assert T.size() > EXPECTED_CONS_MIN, "Only %d operators in the formula -- your theory is likely not sophisticated enough for the course project." % T.size()
