@@ -39,19 +39,19 @@ class Node:
         self.TW = False
         self.is_obstacle = True
 
+    
 
-
-        
+    
 
 
 # North, East, South, West
 # Read map as array Anm
 map = [
+        # this is a row
         [Node("00", "Intersection", False, True, True, False), Node("01", "Road", False, True, False, True), Node("02", "Intersection", False, False, True, True)],
-
-        [Node("10", "Road", True, False, True, False), Node("11", "Block", False, False, False, False), Node("12", "Road", True, False, True, False)],
-
-
+        # this is a row
+        [Node("10", "Road", True, False, True, False), Node("11", "Intersection", True, True, True, True), Node("12", "Road", True, False, True, False)],
+        # this is a row 
         [Node("20", "Intersection", True, True, False, False), Node("21", "Road",False, True, False, True), Node("22", "Intersection", True, False, False, True)]
     ]
 
