@@ -1,248 +1,90 @@
 from bauhaus import Encoding, proposition, constraint
 from bauhaus.utils import count_solutions, likelihood
+from validate_path import verus_theory
+from create_path import create_path
 from node import Node, map
 from allMoves import PossiblePaths
 from termcolor import colored
-
-
-
-def move_east_theory(start, end):
-
-E = Encoding()
-
-
-
-
-'''
-WIP
-    takes in beginning and end point
-
-    start by moving on horizontal axis until beginning and end are lined up
-    then go up or down until they match
-    appends nodes to a path (the hops)
-    this path is then validated
-'''
-def path_creator(beginning, end):
-    #___DECLARING__CLASSES__AND__PROPOSITIONS
-
-    # moved this into the function for scoping reasons
-    E = Encoding()
-
-    beginning_row = int(beginning.name[0])
-    end_row = int(end.name[0])
-    
-    beginning_column = int(beginning.name[1])
-    end_column = int(end.name[1])
-
-
-    # all propositions should have these vars
-    @proposition(E)
-    class LocationPropositions:
-        def __init__(self, data):
-            self.data = data
-        
-        def __repr__(self):
-            return f"A.{self.data}"
-
-
-    # declaring propositions
-
-    # we are moving in this direction
-    move_east = LocationPropositions("move_east")
-    move_west = LocationPropositions("move_west")
-    move_north = LocationPropositions("move_north")
-    move_south = LocationPropositions("move_south")
-
-
-    if (end_row > beginning_row):
-        E.add_constraint(move_north) 
-        #move(north)
-    else:
-         E.add_constraint(~move_north)
-
-
-    E.add_constraint(move_north) if (end_row > beginning_row) else E.add_constraint(~move_north)
-    # if target is to the left of start
-    E.add_constraint(move_south) if (end_row < beginning_row) else E.add_constraint(~move_west)
-    # if target is above start
-    E.add_constraint(move_west) if (end_column < beginning_column) else E.add_constraint(~move_north)
-    # if target is below start
-    E.add_constraint(move_east) if (end_column > beginning_column) else E.add_constraint(~move_east)
-
-    
-    
-
-
-
-def nodes_equal(node_1, node_2):
-    return (node_1.name[0]==node_2.name[0] and node_1.name[1]==node_2.name[1])
-
-
-def move(start, dir):
-
-    row = int(start.name[0])
-    column = int(start.name[1])
-    
-    if dir == "north":
-        return map[str(row-1)][str(column)]
-    elif dir == "south":
-        return map[str(row+1)][str(column)]
-    elif dir == "east":
-        return map[str(row)][str(column+1)]
-    elif dir == "west":
-        return map[str(row)][str(column-1)]
-
-
-
-
-
-
-
-
-
-
-
-
-# tool to validate a given path
-def verus_theory(start, target):
-
-
- #___DECLARING__CLASSES__AND__PROPOSITIONS
-
-    # moved this into the function for scoping reasons
-    E = Encoding()
-
-
-    # all propositions should have these vars
-    @proposition(E)
-    class LocationPropositions:
-        def __init__(self, data):
-            self.data = data
-        
-        def __repr__(self):
-            return f"A.{self.data}"
-
-
-    # declaring propositions
-
-    # we are moving in this direction
-    move_east = LocationPropositions("move_east")
-    move_west = LocationPropositions("move_west")
-    move_north = LocationPropositions("move_north")
-    move_south = LocationPropositions("move_south")
-
-    # we can travel in this direction
-    start_north = LocationPropositions("start_north")
-    start_south = LocationPropositions("start_south")
-    start_east = LocationPropositions("start_east")
-    start_west = LocationPropositions("start_west")
-
-    # we can travel in this direction
-    target_north = LocationPropositions("target_north")
-    target_south = LocationPropositions("target_south")
-    target_east = LocationPropositions("target_east")
-    target_west = LocationPropositions("target_west")
-
-
-    #__LOGIC STARTS___HERE___
-    # given two adjacent nodes, can you make that jump
-    start_row = int(start.name[0])
-    target_row = int(target.name[0])
-    
-    start_column = int(start.name[1])
-    target_column = int(target.name[1])
-
-
-    if not (target.TN or target.TS or target.TW or target.TE):
-        E.add_constraint(~(target_north| target_south | target_west | target_east))
-
-    #__ADD__DIRECTIONAL___CONTRAINTS       
-
-    E.add_constraint(start_north) if (start.TN) else E.add_constraint(~start_north)
-    E.add_constraint(start_east) if (start.TE) else E.add_constraint(~start_east)
-    E.add_constraint(start_south) if (start.TS) else E.add_constraint(~start_south)
-    E.add_constraint(start_west) if (start.TW) else E.add_constraint(~start_west)
-    
-    E.add_constraint(target_north) if (target.TN) else E.add_constraint(~target_north)
-    E.add_constraint(target_east) if (target.TE) else E.add_constraint(~target_east)
-    E.add_constraint(target_south) if (target.TS) else E.add_constraint(~target_south)
-    E.add_constraint(target_west) if (target.TW) else E.add_constraint(~target_west)
-
-    #___FIND____DIRECTION_______
-
-    # if target is to the right in the matrix
-
-    # start = map[2][0]
-    # target = map[2][1]
-
-    # row = 2
-    # column 1
-    E.add_constraint(move_north) if (target_row < start_row) else E.add_constraint(~move_north)
-    # if target is to the left of start
-    E.add_constraint(move_south) if (target_row > start_row) else E.add_constraint(~move_south)
-    # if target is above start
-    E.add_constraint(move_west) if (target_column < start_column) else E.add_constraint(~move_west)
-    # if target is below start
-    E.add_constraint(move_east) if (target_column > start_column) else E.add_constraint(~move_east)
-
-
-
-    # If diagonal
-    E.add_constraint(move_east >> ~(move_south | move_north | move_west))
-    E.add_constraint(move_west >> ~(move_south | move_north | move_east))
-    E.add_constraint(move_south >> ~(move_east | move_north | move_west))
-    E.add_constraint(move_north >> ~(move_east | move_south | move_west))
-
-    
-    if ((target_row == start_row) and (target_column == start_column)):
-        print("Already in target, please choose another target")
-        # if already on target, bugger the model
-        E.add_constraint(move_north & ~move_north)
-        E.add_constraint(move_east & ~move_east)
-        E.add_constraint(move_south & ~move_south)
-        E.add_constraint(move_west & ~move_west)
-
-
-    #__ADD_IMPLICATIONS___TO__VALIDATE
-    
-    E.add_constraint(move_north >> (target_south & start_north))
-    E.add_constraint(move_south >> (target_north & start_south))
-    E.add_constraint(move_east >> (target_west & start_east))
-    E.add_constraint(move_west >> (target_east & start_west))
-
-
-    return E
-
-
-# def print_grid(map_of_nodes, node_name):
-#     for row in map_of_nodes:
-#         for element in row:
-#             value = element.name
-#             if value == node_name:
-#                 value = colored(element.name, "green")
-#             print(value, end= ' ')
-#             element.name = colored(element.name, "white")
-#         print()
-
-        
-
-if __name__ == "__main__":
-
-    start = map[1][0]
-    target = map[1][1]
-
-
-    sample_path=[map[0][0],map[0][1], map[0][2], map[1][2], map[2][2], map[2][1]]
-
-   
-    for i in range(len(sample_path)-1):
-        print(f"From {sample_path[i].name} to {sample_path[i+1].name}")
-        T = verus_theory(sample_path[i], sample_path[i+1])
+import time
+
+# Function that prints the matrix Amn
+list_of_nodes_in_path = []
+def print_grid(grid, node):
+    time.sleep(.5)
+    for element in grid:
+        for knot in element:
+            if knot.name == node:
+                value = colored(knot.name, "green")
+                list_of_nodes_in_path.append(knot.name)
+            elif knot.name in list_of_nodes_in_path:
+                value = colored(knot.name, "green")
+            else:
+                value = knot.name
+            print(value, end=" ")
+        print()
+
+# Function that prints the generated path
+def path_grid(grid, start, end, path):
+    time.sleep(.5)
+    for element in grid:
+        for knot in element:
+            if knot.name == start:
+                value = colored(knot.name, "magenta")
+            elif knot.name == end:
+                value = colored(knot.name, "yellow")
+            elif knot.name in path:
+                value = colored(knot.name, "green")
+            else:
+                value = knot.name
+            print(value, end=" ")
+        print()
+
+
+# Generates a path and determines if it's valid
+def check_path(beginning, end):
+    # generate a path
+    path = create_path(beginning, end)[0]
+
+
+    # assume no moves are invalid
+    violated = False
+
+
+    # iterate over path 
+    for i in range(len(path)-1): #we check element at i, then i+1, so if we go to i-1 incluscive we will go over the list
+        # aesthetic stuff
+        start_print = colored(path[i].name, "magenta")
+        end_print = colored(path[i+1].name, "yellow")
+        print(f"\nFrom {start_print} to {end_print}\n")
+
+        # validate the move from i to i+1; verus is latin for verify
+        T = verus_theory(path[i], path[i+1])
         T = T.compile()
 
-        #print_grid(map, sample_path[i].name)
+        if not (T.satisfiable()):
+            # if not valid, set violated to true and print out the error spot
+            violated = True
+            print(f"Cannot make the jump from {path[i].name} to {path[i+1].name}")
+        print_grid(map, path[i].name)
 
+
+    if not violated:
+        # if path is all good, print the valid
+        lista = [i.name for i in path]
+        time.sleep(.5)
+
+        print(f"\nThere is a valid path: {lista}\n")
+        print(f"End node: {lista[len(lista)-1]}")
+        print()
+        start_print = colored(beginning.name, "magenta")
+        end_print = colored(end.name, "yellow")
+        print(f"\nPath available from {start_print} to {end_print}\n")
+        path_grid(map, beginning.name, end.name, lista[1:-1])
+
+    else:
+        print("There is no valid path.\n")
         
-        print("\nSatisfiable: %s" % T.satisfiable())
-        print("# Solutions: %d" % count_solutions(T))
-        print("   Solution: %s" % T.solve())
+
+
+if __name__ == "__main__":
+    check_path(map[0][0], map[3][4])

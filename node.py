@@ -1,6 +1,7 @@
 from bauhaus import Encoding, proposition, constraint
 from bauhaus.utils import count_solutions, likelihood
 
+# Class to handle the objects in the grid
 class Node:
 
     # Class attribute
@@ -39,21 +40,53 @@ class Node:
         self.TW = False
         self.is_obstacle = True
 
+    def get_x(self):
+        return int(self.name[0])
+    
+    def get_y(self):
+        return int(self.name[1])
+
     
 
     
 
 
-# North, East, South, West
-# Read map as array Anm
-map = [
-        # this is a row
-        [Node("00", "Intersection", False, True, True, False), Node("01", "Road", False, True, False, True), Node("02", "Intersection", False, False, True, True)],
-        # this is a row
-        [Node("10", "Road", True, False, True, False), Node("11", "Intersection", True, True, True, True), Node("12", "Road", True, False, True, False)],
-        # this is a row 
-        [Node("20", "Intersection", True, True, False, False), Node("21", "Road",False, True, False, True), Node("22", "Intersection", True, False, False, True)]
-    ]
 
-    # returns true or false
-    # determn
+
+map = [[
+    Node("00", "Intersection", True, True, True, True),
+    Node("01", "Road", False, True, False, True),
+    Node("02", "Intersection", True, True, True, True),
+    Node("03", "Road", False, True, False, True),
+    Node("04", "Intersection", True, True, True, True)
+],
+       [
+           Node("10", "Road", True, False, True, True),
+           Node("11", "Block", False, False, False, False),
+           Node("12", "Road", True, False, True, True),
+           Node("13", "Block", False, False, False, False),
+           Node("14", "Road", True, False, True, True)
+       ],
+       [
+           Node("20", "Intersection", True, True, True, True),
+           Node("21", "Road", False, True, False, True),
+           Node("22", "Intersection", True, True, True, True),
+           Node("23", "Road", False, True, False, True),
+           Node("24", "Intersection", True, True, True, True)
+       ],
+       [
+           Node("30", "Road", True, False, True, True),
+           Node("31", "Block", False, False, False, False),
+           Node("32", "Road", True, False, True, True),
+           Node("33", "Block", False, False, False, False),
+           Node("34", "Road", True, False, True, True)
+       ],
+       [
+           Node("40", "Intersection", True, True, True, True),
+           Node("41", "Road", False, True, False, True),
+           Node("42", "Intersection", True, True, True, True),
+           Node("43", "Block", False, False, False, False),
+           Node("44", "Intersection", True, True, True, True)
+       ]]
+
+
